@@ -5,11 +5,23 @@ import numpy as np
 import cv2
 from ultralytics import YOLO
 
-try:
-	import torch
-except ImportError:
-	torch = None
+import sys
 
+# Alleviate Hugging Face ZeroGPU restriction dynamically
+try:
+	import spaces
+except ImportError:
+	# Define a mock spaces module so local runs don't crash on macOS/CPU
+	class DummySpaces:
+		@staticmethod
+		def GPU(func=None, duration=None):
+			if func is not None:
+				return func
+			def decorator(f):
+				return f
+			return decorator
+	sys.modules["spaces"] = DummySpaces
+	import spaces
 
 # Classes considered violent / threatening
 THREAT_CLASSES = {"knife", "fork", "scissors", "bottle"}
@@ -19,6 +31,22 @@ THREAT_CLASSES = {"knife", "fork", "scissors", "bottle"}
 COCO_TARGET_IDS = [0, 39, 42, 43, 76]
 
 PERSON_LABEL = "person"
+
+
+try:
+	import torch
+except ImportError:
+	torch = None
+
+@spaces.GPU
+def _run_yolo_inference(model, frame, imgsz, device, classes):
+	return model(
+		frame,
+		imgsz=imgsz,
+		device=device,
+		classes=classes,
+		verbose=False,
+	)[0]
 
 
 def _select_device() -> str:
@@ -60,13 +88,13 @@ class YoloViolenceDetector:
 		person_boxes : list[(x, y, w, h)]
 			Bounding boxes for every detected person (used by face checker).
 		"""
-		results = self.model(
+		results = _run_yolo_inference(
+			self.model,
 			frame,
-			imgsz=self.imgsz,
-			device=self.device,
-			classes=COCO_TARGET_IDS,
-			verbose=False,
-		)[0]
+			self.imgsz,
+			self.device,
+			COCO_TARGET_IDS
+		)
 
 		if self.debug:
 			# Print top 5 raw detections regardless of filtering
