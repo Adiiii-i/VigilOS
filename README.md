@@ -1,3 +1,13 @@
+---
+title: VigilOS
+emoji: 🛡️
+colorFrom: red
+colorTo: slate
+sdk: gradio
+app_port: 7860
+pinned: false
+---
+
 ## Violence Detection System (YOLOv8)
 
 A modular Python 3.10+ project that detects potentially violent objects (knife, gun, bottle, axe) using YOLOv8, sends WhatsApp alerts (Twilio or pywhatkit), saves a snapshot and a 10-second clip (5s before and 5s after), and logs detections to CSV and SQLite.
