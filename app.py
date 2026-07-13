@@ -2,7 +2,7 @@
 
 import os
 import sqlite3
-from flask import Flask, render_template, Response, jsonify
+from flask import Flask, render_template, Response, jsonify, request
 from engine import DetectionEngine
 from utils import DEFAULT_DB_PATH
 
@@ -74,6 +74,22 @@ def api_stop():
 def api_start():
     engine.start()
     return jsonify({"ok": True, "status": "starting"})
+
+
+@app.route("/api/process_frame", methods=["POST"])
+def api_process_frame():
+    try:
+        frame_bytes = request.data
+        if not frame_bytes:
+            return "No image data", 400
+
+        annotated_bytes, has_weapon = engine.process_client_frame(frame_bytes)
+        if not annotated_bytes:
+            return "Failed to process image", 500
+
+        return Response(annotated_bytes, mimetype="image/jpeg")
+    except Exception as e:
+        return str(e), 500
 
 
 if __name__ == "__main__":

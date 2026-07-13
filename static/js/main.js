@@ -1,6 +1,6 @@
 /* ────────────────────────────────────────────────────────
-   VigilOS — Client JS
-   Links the redesigned UI to the live Python API.
+   VigilOS — Client JS (Client-Side Streaming Mode)
+   Retrieves local visitor camera and streams frames to Python.
    ──────────────────────────────────────────────────────── */
 
 const SEV = {
@@ -39,7 +39,15 @@ let statusInterval = null;
 let logInterval = null;
 let uptimeInterval = null;
 let signalInterval = null;
+let captureInterval = null;
 let uptimeSec = 0;
+
+// Local Web Media stream capture
+let localStream = null;
+let clientVideo = null;
+let clientCanvas = null;
+let canvasCtx = null;
+let lastFrameTime = Date.now();
 
 // ── Build Signal Bar Elements ────────────────────────────
 signalBars.innerHTML = '';
@@ -88,7 +96,6 @@ async function checkStatus() {
     const res = await fetch('/api/status');
     const data = await res.json();
 
-    fpsVal.textContent = `${data.fps.toFixed(1)} FPS`;
     statThreats.textContent = data.total_detections;
     statConcealed.textContent = data.total_concealed;
 
@@ -103,8 +110,8 @@ async function checkStatus() {
       if (data.status === 'error') {
         statusLabel.textContent = 'ERROR';
         statusPill.className = 'status-pill error';
-        feedCenterMsg.textContent = 'CAMERA ERROR';
-        feedCenterSub.textContent = data.error || 'Cannot open camera stream';
+        feedCenterMsg.textContent = 'SYSTEM ERROR';
+        feedCenterSub.textContent = data.error || 'Server error detected';
       }
     }
   } catch (err) {
@@ -195,8 +202,52 @@ function tickSignal() {
   });
 }
 
+// ── Client-Side Frame Capturing & Posting ──────────────
+function sendFrameToServer() {
+  if (!running || !clientVideo || !canvasCtx) return;
+
+  // Draw current webcam frame onto hidden canvas
+  canvasCtx.drawImage(clientVideo, 0, 0, clientCanvas.width, clientCanvas.height);
+
+  // Convert canvas frame to blob
+  clientCanvas.toBlob(async (blob) => {
+    if (!blob || !running) return;
+
+    try {
+      const res = await fetch('/api/process_frame', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob
+      });
+
+      if (!res.ok) return;
+
+      const responseBlob = await res.blob();
+      if (!running) return;
+
+      const url = URL.createObjectURL(responseBlob);
+
+      // Swap images and release memory to prevent memory leaks
+      const oldUrl = videoFeed.src;
+      videoFeed.src = url;
+      if (oldUrl && oldUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(oldUrl);
+      }
+
+      // Calculate client-side process FPS
+      const now = Date.now();
+      const localFps = 1000 / (now - lastFrameTime);
+      lastFrameTime = now;
+      fpsVal.textContent = `${localFps.toFixed(1)} FPS`;
+
+    } catch (err) {
+      console.warn("Frame upload failed:", err);
+    }
+  }, 'image/jpeg', 0.65); // 0.65 quality compression keeps upload payload light
+}
+
 // ── Set the State of UI ──────────────────────────────────
-function setRunningState(shouldRun) {
+async function setRunningState(shouldRun) {
   running = shouldRun;
   if (running) {
     feedWrap.classList.add('running');
@@ -206,9 +257,41 @@ function setRunningState(shouldRun) {
     toggleBtn.classList.add('stop');
     btnIcon.innerHTML = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
     signalChip.textContent = 'STREAMING';
-    videoFeed.src = '/video_feed'; // Load the stream
 
-    feedBadges.innerHTML = `<span class="feed-badge">MODEL: ATX-V4</span><span class="feed-badge">POSE + WEAPON NET</span>`;
+    feedBadges.innerHTML = `<span class="feed-badge">INPUT: WEB CAMERA</span><span class="feed-badge">YOLOv8m + MEDIAPIPE</span>`;
+
+    // ── Get local camera device access ──
+    try {
+      if (!clientVideo) {
+        clientVideo = document.createElement('video');
+        clientVideo.autoplay = true;
+        clientVideo.playsInline = true;
+        clientCanvas = document.createElement('canvas');
+        clientCanvas.width = 640;
+        clientCanvas.height = 480;
+        canvasCtx = clientCanvas.getContext('2d');
+      }
+
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user"
+        }
+      });
+      clientVideo.srcObject = localStream;
+
+      // Capture loop at ~150ms intervals (~7 FPS)
+      captureInterval = setInterval(sendFrameToServer, 150);
+    } catch (err) {
+      console.error("Local webcam access failed:", err);
+      statusLabel.textContent = 'ERROR';
+      statusPill.className = 'status-pill error';
+      feedCenterMsg.textContent = 'CAMERA BLOCKED';
+      feedCenterSub.textContent = 'allow camera permission in browser';
+      setRunningState(false);
+      return;
+    }
 
     // Start local timer loop for uptime
     if (!uptimeInterval) {
@@ -227,7 +310,25 @@ function setRunningState(shouldRun) {
     btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
     signalChip.textContent = 'IDLE';
     feedBadges.innerHTML = '';
-    videoFeed.src = ''; // Clear image src to stop browser network load
+
+    // Stop streams
+    if (captureInterval) {
+      clearInterval(captureInterval);
+      captureInterval = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    if (clientVideo) {
+      clientVideo.srcObject = null;
+    }
+    
+    // Revoke old blob to release browser memory
+    if (videoFeed.src && videoFeed.src.startsWith('blob:')) {
+      URL.revokeObjectURL(videoFeed.src);
+    }
+    videoFeed.src = ''; 
 
     if (uptimeInterval) {
       clearInterval(uptimeInterval);
@@ -249,6 +350,8 @@ async function toggleEngine() {
     }
   } catch (err) {
     console.error('Failed to trigger engine control', err);
+    // Fallback toggle
+    setRunningState(!running);
   }
 }
 
