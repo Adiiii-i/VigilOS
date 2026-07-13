@@ -30,7 +30,7 @@ app = Flask(__name__)
 # Single global engine instance
 engine = DetectionEngine(
     camera_index=int(os.getenv("CAMERA_INDEX", "0")),
-    model_name=os.getenv("MODEL_NAME", "yolov8m.pt"),
+    model_name=os.getenv("MODEL_NAME", "yolov8n.pt"),
     conf_threshold=float(os.getenv("CONF_THRESHOLD", "0.4")),
 )
 engine.start()

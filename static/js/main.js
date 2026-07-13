@@ -266,6 +266,7 @@ async function setRunningState(shouldRun) {
         clientVideo = document.createElement('video');
         clientVideo.autoplay = true;
         clientVideo.playsInline = true;
+        clientVideo.muted = true; // Crucial for browser camera playback permissions
         clientCanvas = document.createElement('canvas');
         clientCanvas.width = 640;
         clientCanvas.height = 480;
@@ -280,6 +281,13 @@ async function setRunningState(shouldRun) {
         }
       });
       clientVideo.srcObject = localStream;
+      
+      // Explicitly trigger playback to resolve Chrome/Safari security delays
+      try {
+        await clientVideo.play();
+      } catch (playErr) {
+        console.warn("Video playback deferred:", playErr);
+      }
 
       // Capture loop at ~150ms intervals (~7 FPS)
       captureInterval = setInterval(sendFrameToServer, 150);
