@@ -1,4 +1,23 @@
-"""Flask web server for the Violence Detection System dashboard."""
+import sys
+
+# Alleviate Hugging Face ZeroGPU restriction dynamically in entry point
+try:
+    import spaces
+except ImportError:
+    class DummySpaces:
+        @staticmethod
+        def GPU(func=None, duration=None):
+            if func is not None:
+                return func
+            def decorator(f):
+                return f
+            return decorator
+    sys.modules["spaces"] = DummySpaces
+    import spaces
+
+@spaces.GPU
+def dummy_gpu_checker():
+    pass
 
 import os
 import sqlite3
