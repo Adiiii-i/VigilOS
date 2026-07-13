@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Configuration (contains private API credentials)
+.env
+
+# Media files & logs (runtime data)
+media/
+logs/
+*.mp4
+*.jpg
+*.png
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+
+# Large models
+*.pt
+*.tflite

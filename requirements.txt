@@ -1,0 +1,10 @@
+ultralytics==8.2.103
+opencv-python==4.10.0.84
+numpy>=1.24.0
+torch>=2.1.0
+mediapipe>=0.10.0
+flask>=3.0.0
+pywhatkit==5.4
+twilio==9.3.6
+python-dotenv==1.0.1
+pandas==2.2.2

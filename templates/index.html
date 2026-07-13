@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VigilOS — Violence &amp; Concealed Threat Recognition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+ 
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L4 5.5V11C4 16 7.4 20.6 12 22C16.6 20.6 20 16 20 11V5.5L12 2Z" stroke="#34D9B7" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9 11.8L11.2 14L15.5 9.2" stroke="#FF6A45" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">
+          <h1>VigilOS</h1>
+          <span class="brand-tag">DETECT</span>
+        </div>
+        <div class="brand-sub">VIOLENCE &amp; CONCEALED-THREAT RECOGNITION</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" id="statusPill">
+        <span class="status-dot"></span>
+        <span class="status-label" id="statusLabel">CONNECTING...</span>
+        <span class="fps-val mono" id="fpsVal">0.0 FPS</span>
+      </div>
+      <button class="btn-start" id="toggleBtn">
+        <svg id="btnIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span id="btnLabel">Start</span>
+      </button>
+    </div>
+  </div>
+ 
+  <div class="layout">
+    <div>
+      <div class="panel-head">
+        <span class="panel-title">LIVE FEED</span>
+        <span class="panel-meta"><b id="camLabel">Camera 0</b> · 640×480</span>
+      </div>
+      <div class="feed-wrap" id="feedWrap">
+        <div class="feed-grid"></div>
+        <div class="feed-vignette"></div>
+        <div class="scan-line"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+ 
+        <div class="feed-badges" id="feedBadges"></div>
+        <div class="feed-live-view" id="feedLiveView">
+          <img id="videoFeed" src="" alt="Live video feed" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;" />
+        </div>
+        <div class="feed-cam-id">SECTOR-04 · N.ENTR</div>
+        <div class="feed-rec"><span class="dot"></span>REC</div>
+ 
+        <div class="feed-center">
+          <div class="glyph">▹◃</div>
+          <div class="msg" id="feedCenterMsg">DETECTION STOPPED</div>
+          <div class="sub" id="feedCenterSub">press start to resume scanning</div>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="log-panel">
+      <div class="log-header">
+        <span class="panel-title">EVENT LOG</span>
+        <span class="log-count mono" id="eventCount">0 events</span>
+      </div>
+      <div class="log-list" id="logList">
+        <!-- Event items will be dynamically injected here -->
+      </div>
+    </div>
+  </div>
+ 
+  <div class="statbar">
+    <div class="stat-tile danger">
+      <div class="accent-line" style="--tile-color:var(--danger)"></div>
+      <div class="stat-num" id="statThreats">0</div>
+      <div class="stat-label">THREATS</div>
+    </div>
+    <div class="stat-tile alert">
+      <div class="accent-line" style="--tile-color:var(--alert)"></div>
+      <div class="stat-num" id="statConcealed">0</div>
+      <div class="stat-label">CONCEALED</div>
+    </div>
+    <div class="stat-tile data">
+      <div class="accent-line" style="--tile-color:var(--data)"></div>
+      <div class="stat-num" id="statConf">0%</div>
+      <div class="stat-label">AVG CONFIDENCE</div>
+    </div>
+    <div class="stat-tile safe">
+      <div class="accent-line" style="--tile-color:var(--safe)"></div>
+      <div class="stat-num" id="statUptime">00:00:00</div>
+      <div class="stat-label">UPTIME</div>
+    </div>
+    <div class="signal-panel">
+      <div class="signal-head">
+        <span class="panel-title">SIGNAL</span>
+        <span class="live-chip mono" id="signalChip">IDLE</span>
+      </div>
+      <div class="signal-bars" id="signalBars"></div>
+    </div>
+  </div>
+ 
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
