@@ -2,7 +2,7 @@
 title: VigilOS
 emoji: 🛡️
 colorFrom: red
-colorTo: slate
+colorTo: gray
 sdk: gradio
 app_port: 7860
 pinned: false
